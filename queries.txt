@@ -1,0 +1,63 @@
+//to find the contact no of all the vendor
+
+SELECT `vendor`.`Name`,`vendor_contact`.`Contact_no` FROM `vendor` JOIN `vendor_contact` ON `vendor_contact`.`Vendor_ID` = `vendor`.`Vendor_ID`
+
+//to find number of Books Reserved by a User
+
+SELECT `User_RID`.`User_ID`,COUNT(`User_RID`.`RID`) FROM `User_RID` GROUP BY `User_RID`.`User_ID`
+
+//details of Book Reserved by User
+
+SELECT `Book`.* FROM `Book` WHERE `Book`.`Book_ID` IN (SELECT `Reserve`.`Book_ID` FROM `User_RID` JOIN `Reserve` ON `User_RID`.`User_ID` = '111070011' AND `User_RID`.`RID` = `Reserve`.`RID`)
+
+//to display Bookid,Booktitle,issuedate,return data,fine for a User(also to join three tables)
+
+SELECT `Book`.`Book_ID`,`Book`.`Title`,`Transaction`.`User_ID`,`Transaction`.`Issue_Date`,`Transaction`.`Return_Date`,`fine`.`Fine` FROM `Book`,`Transaction`,`fine` WHERE `Book`.`Book_ID` = `Transaction`.`Book_ID` AND `Transaction`.`Issue_Date` = `fine`.`Issue_Date` AND `Transaction`.`Return_Date` = `fine`.`Return_Date` AND `Transaction`.`User_ID` = '121080014'
+
+//to generate total fine for a User
+
+SELECT `Transaction`.`User_ID`,SUM(`fine`.`Fine`) FROM `fine` JOIN `Transaction` WHERE `Transaction`.`Issue_Date` = `fine`.`Issue_Date` AND `Transaction`.`Return_Date` = `fine`.`Return_Date` AND `Transaction`.`User_ID` = '121080014'
+
+//to find if a Book is Reserved or not if no of rows is 0 Book is not Reserved else Reserved
+
+SELECT `User_RID`.`User_ID`,`Reserve`.`Book_ID` FROM `User_RID` JOIN `Reserve` ON `User_RID`.`RID` = `Reserve`.`RID` WHERE `Reserve`.`Book_ID` = '11655'
+
+//to find number of Books issued by User
+
+SELECT `Transaction`.`User_ID`,COUNT(`User_RID`.`TID`) FROM `Transaction` GROUP BY `Transaction`.`User_ID`
+
+//details of Book issued by User
+
+SELECT `Book`.* FROM `Book` JOIN `Transaction` ON `Transaction`.`Book_ID` = `Book`.`Book_ID` AND `Transaction`.`User_ID` = '121080014'
+
+//to find number of times a Book is issued
+
+SELECT `Transaction`.`ISBN`,COUNT(`Transaction`.`ISBN`) FROM `Transaction` WHERE `Transaction`.`ISBN` = '0-07-100823-3'
+
+
+//details of copies of a Book which are available i.e neither issued nor Reserved
+
+SELECT `Book`.* FROM `Book` WHERE `Book`.`ISBN` = '0-07-100823-3' AND `Book`.`Book_ID` NOT IN
+(
+SELECT `Transaction`.`Book_ID` FROM `Transaction` WHERE `Transaction`.`ISBN` = '0-07-100823-3' AND NOT `Transaction`.`Return_Date` IS NULL
+UNION
+SELECT `Reserve`.`Book_ID` FROM `Reserve` WHERE `Reserve`.`Book_ID` IN (SELECT `Book`.`Book_ID` FROM `Book` WHERE `Book`.`ISBN` = '0-07-100823-3')   
+)
+
+SELECT User_ID,SUM(Fine) FROM (SELECT Transaction.User_ID,Fine.Fine FROM Transaction,Fine WHERE Transaction.Issue_Date=Fine.Issue_Date AND Transaction.Return_Date=Fine.Return_Date) AS test GROUP BY User_ID HAVING User_ID='131080013'
+Query for fine where userId can be changed. If list of all students is reqd remove having clause
+
+SELECT Book_ID FROM Book WHERE MATCH(Title) AGAINST('Waste') AND Book_ID NOT IN (SELECT Book_ID FROM Transaction WHERE Book_ID IN (SELECT Book_ID FROM Book WHERE MATCH(Title) AGAINST('Waste')) AND Return_Date IS NULL UNION SELECT Book_ID FROM Reserve WHERE Book_ID IN (SELECT Book_ID FROM Book WHERE MATCH(Title) AGAINST('Waste')) AND DATEDIFF(CURDATE(),Date)<=2)
+list of books available by title
+
+SELECT COUNT(ISBN) FROM Transaction WHERE ISBN=(SELECT DISTINCT ISBN FROM Book WHERE MATCH(Title) AGAINST('Waste'))
+number of times a book is issued
+
+SELECT ISBN,COUNT(ISBN) FROM Transaction WHERE ISBN IN (SELECT DISTINCT ISBN FROM Book) GROUP BY ISBN
+number of times all books issued on ISBN
+
+SELECT ISBN,COUNT(ISBN) FROM Transaction WHERE ISBN IN (SELECT DISTINCT ISBN FROM Book WHERE Category='Management') GROUP BY ISBN ORDER BY COUNT(ISBN) DESC
+number of times books from a category are issued.
+
+SELECT test.User_ID,test.Book_ID,test.Date FROM (SELECT User_RID.User_ID,Reserve.RID,Reserve.Book_ID,Reserve.Date FROM User_RID JOIN Reserve WHERE User_RID.RID=Reserve.RID) AS test WHERE test.User_ID = '111070011'
+Books reserved by a student
